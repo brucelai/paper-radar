@@ -1,0 +1,141 @@
+# ============================================================================
+# paper-radar config — 論文學習雷達
+# 來源：一組期刊 RSS 訂閱 + 作者/主題式 PubMed search
+# 網站：你的網域 (Cloudflare Pages，可選擇用 CF Access 鎖定只給自己)
+# 主機：任何 24/7 跑 cron 的機器（VPS / 雲端免費層 …）
+#
+# 複製成 config.yaml 後填入自己的網域與 email。
+# ============================================================================
+
+site:
+  domain: paper-radar.example.com
+  title: 論文學習雷達
+  private: true                 # CF Access 鎖定，無 SEO / 無公開 RSS
+  access_email: you@example.com
+
+ntfy:
+  topic: paper-radar            # 私有 topic（只你訂閱）
+  dry_run: false                # host 必為 false
+
+# --- 全文加值層（每篇 DOI 跑）------------------------------------------------
+enrich:
+  unpaywall:
+    enabled: true
+    email: you@example.com      # Unpaywall API 必填 —— 改成你自己的 email
+  inst_sfx:
+    enabled: false              # 預設關閉。只有你有機構訂閱、且填好下方 base 才開啟
+    # 機構 SFX / link-resolver 基底 URL（placeholder）。換成你機構圖書館的 SFX base。
+    base: "https://your-institution-sfx.example.com/SID"
+    sid: Claude
+    # Phase-0 必驗：主機能否匿名讀 SFX menu。讀不到 → 改 per-card 深連結，徽章不預算
+    fulltext_section_markers: ["全文", "Full Text"]
+    platform_labels: [Ovid, ClinicalKey, Wiley, SpringerLink, NEJM, JAMA]
+
+# --- 取得管道（給前端徽章 + /paper-sync 決定怎麼抓全文）----------------------
+fulltext_tiers:
+  oa:          { badge: "🟢 OA",   fetch: host_auto }         # Unpaywall PDF → R2
+  institution: { badge: "🏥 機構訂閱", fetch: pc_claude_chrome }  # 你已登入 session 跑 per-provider 腳本
+  paywalled:   { badge: "🔒 自取", fetch: manual_upload }     # 📎 上傳介面 → R2 → inbox
+
+defaults:
+  limit: 20                     # 每 feed 每次抓最新 N 篇
+  new_days: 5                   # NEW 標籤 / 個人化「上次造訪後」視窗
+
+# --- 主題訂閱開關（前端頂部勾選；對應 interest_model 分組）-------------------
+topic_groups:
+  core_pmr:        { label: "核心 PMR / 復健",        default_on: true }
+  msk_intervention: { label: "MSK US / 介入 / 再生",  default_on: true }
+  neuro_rehab:     { label: "神經復健 / 中風 / SCI",  default_on: true }
+  pain:            { label: "疼痛",                   default_on: true }
+  ortho_sports:    { label: "骨科 / 運動醫學 / PT",   default_on: true }
+  evidence:        { label: "實證資源 (Cochrane)",    default_on: true }
+  slp_ot:          { label: "語言 / 吞嚥 / 職能",     default_on: true }
+
+# ============================================================================
+# FEEDS
+#   type: rss           → 直接抓 RSS URL
+#   type: pubmed_search → 用 E-utilities (esearch+efetch) 跑 term，免 RSS magic token
+#   limit 省略 = 用 defaults.limit
+# ============================================================================
+feeds:
+
+  # ---- 核心 PMR / 復健 ----
+  - { key: archives_pmr,  group: core_pmr, type: rss, name: "Archives of PMR",            url: "http://www.archives-pmr.org/current.rss" }
+  - { key: pmr_wiley,     group: core_pmr, type: rss, name: "PM&R",                       url: "https://onlinelibrary.wiley.com/feed/19341563/most-recent" }
+  - { key: ajpmr,         group: core_pmr, type: rss, name: "Am J Phys Med Rehabil",      url: "https://pubmed.ncbi.nlm.nih.gov/rss/journals/8803677/?limit=20&name=Am%20J%20Phys%20Med%20Rehabil" }
+  - { key: jrm,           group: core_pmr, type: rss, name: "J Rehabilitation Medicine",  url: "https://medicaljournalssweden.se/jrm/gateway/plugin/WebFeedGatewayPlugin/atom" }
+  - { key: neurorehab,    group: core_pmr, type: rss, name: "NeuroRehabilitation",        url: "https://journals.sagepub.com/action/showFeed?ui=0&mi=ehikzz&ai=2b4&jc=nre&type=axatoc&feed=rss" }
+
+  # ---- MSK US / 介入 / 再生 ----
+  - { key: jum,           group: msk_intervention, type: rss, name: "J Ultrasound in Medicine",        url: "https://onlinelibrary.wiley.com/action/showFeed?jc=15509613&type=etoc&feed=rss" }
+  - { key: rapm,          group: msk_intervention, type: rss, name: "Regional Anesthesia & Pain Med",  url: "https://rapm.bmj.com/rss/ahead.xml" }
+  - { key: prolotherapy,  group: msk_intervention, type: rss, name: "J of Prolotherapy",               url: "https://journalofprolotherapy.com/feed/" }
+  - { key: regen_med,     group: msk_intervention, type: rss, name: "Regenerative Medicine",           url: "https://digitalcommons.unmc.edu/reg_articles/recent.rss" }
+  - { key: chang_kv,      group: msk_intervention, type: rss, name: "Chang KV (作者)",                 url: "https://pubmed.ncbi.nlm.nih.gov/rss/search/1-GbkCVmYw_72ZUk1i1KUHusmRPxDwmkg1bNfIAFRsHiiIGk0v/?limit=15" }
+  #   新增（作者型）：全名直接抓 OR (縮寫 AND 興趣 term + MeSH)，降同名雜訊
+  - key: ozcakar
+    group: msk_intervention
+    type: pubmed_search
+    name: "Levent Özçakar (作者)"
+    term: '"Ozcakar, Levent"[Full Author Name] OR (Ozcakar L[Author] AND ("Ultrasonography"[Mesh] OR ultrasound OR sonography OR musculoskeletal))'
+  - key: ricci
+    group: msk_intervention
+    type: pubmed_search
+    name: "Vincenzo Ricci (作者)"
+    term: '"Ricci, Vincenzo"[Full Author Name] OR (Ricci V[Author] AND ("Ultrasonography"[Mesh] OR ultrasound OR sonography OR musculoskeletal OR fascia))'
+  - key: wu_wt
+    group: msk_intervention
+    type: pubmed_search
+    name: "吳威廷 Wei-Ting Wu (作者)"
+    term: '"Wu, Wei-Ting"[Full Author Name] OR (Wu WT[Author] AND ("Ultrasonography"[Mesh] OR musculoskeletal OR sonography))'
+  #   新增（主題型）：同義詞 + MeSH 擴充
+  - key: hydrodissect
+    group: msk_intervention
+    type: pubmed_search
+    name: "Nerve hydrodissection"
+    term: 'hydrodissection OR "hydro-dissection" OR "perineural injection" OR ("Nerve Block"[Mesh] AND ultrasound-guided)'
+  - key: eswt
+    group: msk_intervention
+    type: pubmed_search
+    name: "ESWT rehabilitation"
+    term: '("Extracorporeal Shockwave Therapy"[Mesh] OR "extracorporeal shock wave" OR shockwave OR "shock wave" OR ESWT OR "radial shock wave") AND (rehabilitation OR tendinopathy OR "plantar fasciitis" OR musculoskeletal OR spasticity)'
+
+  # ---- 神經復健 / 中風 / SCI ----
+  - { key: nnr,           group: neuro_rehab, type: rss, name: "Neurorehab & Neural Repair",        url: "https://journals.sagepub.com/action/showFeed?ui=0&mi=ehikzz&ai=2b4&jc=nnr&type=axatoc&feed=rss" }
+  - { key: jner,          group: neuro_rehab, type: pubmed_search, name: "J NeuroEngineering & Rehab", term: '"J Neuroeng Rehabil"[ta]' }  # Springer search.rss XML 壞
+  - { key: stroke_rehab,  group: neuro_rehab, type: rss, name: "Stroke Rehabilitation",             url: "https://www.tandfonline.com/feed/rss/ytsr20" }
+  - { key: spinal_cord,   group: neuro_rehab, type: rss, name: "Spinal Cord",                       url: "https://www.nature.com/sc.rss" }
+  - { key: dmcn,          group: neuro_rehab, type: rss, name: "Dev Medicine & Child Neurology",    url: "https://onlinelibrary.wiley.com/action/showFeed?jc=14698749&type=etoc&feed=rss" }
+  #   新增（主題型）：同義詞 + MeSH 擴充
+  - key: spasticity
+    group: neuro_rehab
+    type: pubmed_search
+    name: "Spasticity / BoNT"
+    term: '("Muscle Spasticity"[Mesh] OR spasticity OR hypertonia) AND ("Botulinum Toxins"[Mesh] OR botulinum OR BoNT OR onabotulinumtoxinA OR abobotulinumtoxinA)'
+
+  # ---- 疼痛 ----
+  # LWW 期刊改走 PubMed [ta]（journals.lww.com CDN 擋自動請求/XML 壞，Zotero 也卡）
+  - { key: pain,          group: pain, type: pubmed_search, name: "PAIN",            term: '"Pain"[ta]' }
+  - { key: pain_med,      group: pain, type: rss, name: "Pain Medicine",         url: "https://academic.oup.com/rss/site_5414/3275.xml" }
+  - { key: pain_phys,     group: pain, type: rss, name: "Pain Physician",        url: "https://pubmed.ncbi.nlm.nih.gov/rss/journals/100954394/?limit=20&name=Pain%20Physician" }
+  - { key: clin_j_pain,   group: pain, type: pubmed_search, name: "Clinical J of Pain", term: '"Clin J Pain"[ta]' }
+
+  # ---- 骨科 / 運動醫學 / PT ----
+  - { key: bjsm,          group: ortho_sports, type: rss, name: "Br J Sports Medicine",      url: "https://bjsm.bmj.com/rss/ahead.xml" }
+  - { key: bjsm_pedro,    group: ortho_sports, type: rss, name: "BJSM PEDro SR update",      url: "https://bjsm.bmj.com/rss/PEDro_systematic_review_update.xml" }
+  - { key: jospt,         group: ortho_sports, type: rss, name: "JOSPT",                     url: "https://www.jospt.org/action/showFeed?type=etoc&feed=rss&jc=jospt" }
+  - { key: jbjs,          group: ortho_sports, type: pubmed_search, name: "J Bone & Joint Surgery", term: '"J Bone Joint Surg Am"[ta]' }
+  - { key: phys_ther,     group: ortho_sports, type: rss, name: "Physical Therapy",          url: "https://academic.oup.com/rss/site_5575/advanceAccess_3431.xml" }
+
+  # ---- 實證資源 ----
+  - { key: cochrane_cdsr, group: evidence, type: rss, name: "Cochrane Library (CDSR)",       url: "https://www.cochranelibrary.com/cdsr/table-of-contents/rss.xml" }
+  - { key: cochrane_cca,  group: evidence, type: rss, name: "Cochrane Clinical Answers",     url: "https://www.cochranelibrary.com/cca/about/rss.xml" }
+
+  # ---- 語言 / 吞嚥 / 職能（低興趣，預設關）----
+  - { key: dysphagia,     group: slp_ot, type: pubmed_search, name: "Dysphagia",             term: '"Dysphagia"[ta]' }  # Springer search.rss XML 壞
+  - { key: jslhr,         group: slp_ot, type: rss, name: "J Speech Lang Hearing Res",       url: "https://pubs.asha.org/action/showFeed?type=axatoc&feed=rss&jc=jslhr" }
+  - { key: ajslp,         group: slp_ot, type: rss, name: "Am J Speech-Language Path",       url: "https://pubs.asha.org/action/showFeed?type=axatoc&feed=rss&jc=ajslp" }
+  - { key: ajot,          group: slp_ot, type: rss, name: "Am J Occupational Therapy",       url: "https://research.aota.org/rss/site_1000001/1000003.xml" }
+  - { key: aotj,          group: slp_ot, type: rss, name: "Australian Occup Therapy J",      url: "https://onlinelibrary.wiley.com/action/showFeed?jc=14401630&type=etoc&feed=rss" }
+  - { key: otjr,          group: slp_ot, type: rss, name: "Occup Therapy J of Research",     url: "https://journals.sagepub.com/action/showFeed?type=etoc&feed=rss&jc=otja" }
+  - { key: pedpt,         group: slp_ot, type: pubmed_search, name: "Pediatric Physical Therapy", term: '"Pediatr Phys Ther"[ta]' }

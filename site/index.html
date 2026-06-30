@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>論文學習雷達</title>
+<link rel="stylesheet" href="style.css?v=20260707">
+</head>
+<body>
+<header>
+  <div class="head-top">
+    <h1>📡 論文學習雷達</h1>
+    <div class="head-right">
+      <span class="meta" id="meta">載入中…</span>
+      <a class="head-toggle rev-link" href="profile.html" title="偏好儀表板">📈</a>
+      <button id="headToggle" class="head-toggle" aria-label="展開/收合設定" title="展開/收合">▶</button>
+    </div>
+  </div>
+
+  <!-- 等待同步提醒（回 PC 喊「論文同步」） -->
+  <div id="syncBanner" class="sync-banner hidden"></div>
+  <div id="visitBanner" class="visit-banner hidden"></div>
+
+  <!-- 可折疊：搜尋 + 訂閱 + 上傳 + 篩選 -->
+  <div id="headExtra" class="head-extra">
+    <!-- 搜尋 -->
+    <input type="search" id="search" placeholder="🔍 搜尋標題 / 作者 / 期刊…">
+
+    <!-- 上傳外部論文（非 RSS 來源） -->
+    <details class="upload">
+      <summary>➕ 上傳外部論文（非雷達來源，給 Claude 跑全文）</summary>
+      <div class="upload-body">
+        <input type="file" id="upFile" accept="application/pdf">
+        <input type="text" id="upTitle" placeholder="標題（選填）">
+        <input type="text" id="upDoi" placeholder="DOI（選填，有的話更好）">
+        <div class="up-modes">
+          <label class="up-check"><input type="checkbox" id="upContent" checked> 📚 內容整理（/paper-digest）</label>
+          <label class="up-check"><input type="checkbox" id="upQuality"> 🔬 品質評讀（/paper-review）</label>
+        </div>
+        <button id="upBtn">上傳</button>
+        <span id="upMsg" class="up-msg"></span>
+      </div>
+    </details>
+
+    <!-- 主題訂閱開關 -->
+    <div class="topics" id="topics"></div>
+
+    <!-- 篩選列 -->
+    <div class="filter-row">
+      <select id="sort">
+        <option value="rec">推薦排序</option>
+        <option value="date">最新優先</option>
+        <option value="score">關鍵字分數</option>
+      </select>
+      <div class="chips" id="badgeFilter">
+        <button class="chip" data-badge="all" data-on="1">全部</button>
+        <button class="chip" data-badge="oa">🟢 OA</button>
+        <button class="chip" data-badge="oanew">🆕 新開放</button>
+        <button class="chip" data-badge="inst">🏥 機構訂閱</button>
+        <button class="chip" data-badge="new">✨ NEW</button>
+      </div>
+      <label class="seen-toggle"><input type="checkbox" id="showSeen"> 顯示已看過</label>
+    </div>
+  </div>
+</header>
+
+<main id="list"></main>
+<footer><span id="count"></span> · 復健科 陳柏威 · 私人學習站</footer>
+
+<script src="app.js?v=20260707"></script>
+</body>
+</html>

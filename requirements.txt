@@ -1,0 +1,5 @@
+feedparser>=6.0
+requests>=2.31
+pyyaml>=6.0
+# PRPM v2：embed_papers.py 用（ONNX/CPU，選用；裝不起來 embedding 階段會自動跳過）
+fastembed>=0.3

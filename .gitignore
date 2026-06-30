@@ -1,0 +1,29 @@
+# SQLite local DB + backups
+*.db
+*.db.bak*
+
+# Generated feed export (pipeline output; sample is committed instead)
+papers.json
+site/papers.json
+
+# PRPM v2 pipeline artifacts (local; site/profile.json holds personal preference data)
+actions_cache.json
+model_state.json
+site/profile.json
+
+# Secrets / env
+.env
+*.dpapi
+
+# Training artifacts (local)
+training_log.jsonl
+training_runs.log
+interest_model.json.bak*
+
+# Python
+__pycache__/
+.venv/
+venv/
+
+# Wrangler
+.wrangler/

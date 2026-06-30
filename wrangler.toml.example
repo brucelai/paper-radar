@@ -1,0 +1,16 @@
+name = "paper-radar"
+compatibility_date = "2024-11-01"
+pages_build_output_dir = "site"
+
+# D1：動作層（👍📌📥📖 + 上傳記錄）。binding=DB 對齊 _worker.js
+# 建立後把 `wrangler d1 create paper-radar-db` 回傳的 database_id 填進來。
+[[d1_databases]]
+binding = "DB"
+database_name = "paper-radar-db"
+database_id = "YOUR_D1_DATABASE_ID"
+
+# R2（全文 PDF + 外部論文上傳）。需先：dashboard 啟用 R2(綁卡) + token 加 Workers R2 Storage:Edit
+# + wrangler r2 bucket create paper-radar-pdfs
+[[r2_buckets]]
+binding = "PDFS"
+bucket_name = "paper-radar-pdfs"

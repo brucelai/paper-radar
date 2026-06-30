@@ -1,0 +1,525 @@
+{
+  "version": "1.0",
+  "updated": "2026-06-29",
+  "thresholds": {
+    "recommend": 3,
+    "candidate": 1
+  },
+  "random_picks": 2,
+  "positive": [
+    {
+      "weight": 3,
+      "tag": "rTMS/TBS",
+      "keywords": [
+        "rTMS",
+        "repetitive transcranial magnetic",
+        "iTBS",
+        "theta burst stimulation",
+        "intermittent theta burst"
+      ],
+      "base_weight": 3
+    },
+    {
+      "weight": 3,
+      "tag": "VNS",
+      "keywords": [
+        "vagus nerve stimulation",
+        "VNS paired"
+      ],
+      "base_weight": 3
+    },
+    {
+      "weight": 3,
+      "tag": "US-guided intervention",
+      "keywords": [
+        "ultrasound-guided injection",
+        "ultrasound guided injection",
+        "cadaveric validation",
+        "hydrodilatation",
+        "hydrodissection",
+        "ultrasound-guided release",
+        "injectate distribution"
+      ],
+      "base_weight": 3
+    },
+    {
+      "weight": 3,
+      "tag": "Chang KV group",
+      "keywords": [
+        "Chang, Ke-Vin",
+        "Chang KV",
+        "Özçakar, Levent",
+        "Ricci, Vincenzo"
+      ],
+      "base_weight": 3
+    },
+    {
+      "weight": 2,
+      "tag": "robot rehab",
+      "keywords": [
+        "robot-assisted",
+        "robotic training",
+        "exoskeleton",
+        "exosuit",
+        "BCI",
+        "brain-computer interface",
+        "brain computer interface"
+      ],
+      "base_weight": 2
+    },
+    {
+      "weight": 2,
+      "tag": "FES",
+      "keywords": [
+        "functional electrical stimulation",
+        "FES-assisted",
+        "multichannel FES",
+        "neuroprosthesis"
+      ],
+      "base_weight": 2
+    },
+    {
+      "weight": 2,
+      "tag": "prolotherapy",
+      "keywords": [
+        "prolotherapy",
+        "neural prolotherapy",
+        "dextrose injection",
+        "perineural injection"
+      ],
+      "base_weight": 2
+    },
+    {
+      "weight": 2,
+      "tag": "PRP/regen",
+      "keywords": [
+        "platelet-rich plasma",
+        "PRP",
+        "bone marrow concentrate",
+        "orthobiologic",
+        "stromal vascular fraction",
+        "SVF",
+        "regenerative medicine injection"
+      ],
+      "base_weight": 2
+    },
+    {
+      "weight": 2,
+      "tag": "pain intervention",
+      "keywords": [
+        "radiofrequency ablation",
+        "nerve block",
+        "neurolysis",
+        "pulsed radiofrequency",
+        "spinal cord stimulation",
+        "SCS",
+        "dorsal root ganglion",
+        "DRG stimulation",
+        "peripheral nerve stimulation",
+        "celiac plexus"
+      ],
+      "base_weight": 2
+    },
+    {
+      "weight": 2,
+      "tag": "BoNT/spasticity",
+      "keywords": [
+        "botulinum toxin",
+        "BoNT",
+        "botulinumtoxin",
+        "spasticity management",
+        "spasticity reduction",
+        "antispasticity"
+      ],
+      "base_weight": 2
+    },
+    {
+      "weight": 3,
+      "tag": "entrapment neuropathy",
+      "keywords": [
+        "carpal tunnel",
+        "CTS",
+        "cubital tunnel",
+        "ulnar neuropathy",
+        "radial neuropathy",
+        "entrapment neuropathy",
+        "tarsal tunnel",
+        "posterior interosseous nerve"
+      ],
+      "base_weight": 2
+    },
+    {
+      "weight": 2,
+      "tag": "shoulder pathology",
+      "keywords": [
+        "subacromial impingement",
+        "rotator cuff",
+        "adhesive capsulitis",
+        "frozen shoulder",
+        "shoulder injection",
+        "rotator interval",
+        "glenohumeral"
+      ],
+      "base_weight": 2
+    },
+    {
+      "weight": 2,
+      "tag": "post-stroke pain",
+      "keywords": [
+        "post-stroke shoulder pain",
+        "hemiplegic shoulder",
+        "PSSP",
+        "central post-stroke pain"
+      ],
+      "base_weight": 2
+    },
+    {
+      "weight": 2,
+      "tag": "CRPS",
+      "keywords": [
+        "complex regional pain",
+        "CRPS"
+      ],
+      "base_weight": 2
+    },
+    {
+      "weight": 2,
+      "tag": "fibromyalgia",
+      "keywords": [
+        "fibromyalgia",
+        "FMS",
+        "juvenile fibromyalgia"
+      ],
+      "base_weight": 2
+    },
+    {
+      "weight": 1,
+      "tag": "stroke rehab",
+      "keywords": [
+        "stroke rehabilitation",
+        "post-stroke",
+        "hemiplegia",
+        "hemiparesis",
+        "hemiplegic",
+        "ischemic stroke",
+        "chronic stroke",
+        "subacute stroke"
+      ],
+      "base_weight": 1
+    },
+    {
+      "weight": 2,
+      "tag": "SCI",
+      "keywords": [
+        "spinal cord injury",
+        "SCI",
+        "paraplegia",
+        "tetraplegia",
+        "quadriplegia"
+      ],
+      "base_weight": 1
+    },
+    {
+      "weight": 1,
+      "tag": "OA",
+      "keywords": [
+        "osteoarthritis",
+        "knee OA",
+        "hip OA",
+        "hand OA",
+        "joint replacement",
+        "arthroplasty"
+      ],
+      "base_weight": 1
+    },
+    {
+      "weight": 1,
+      "tag": "sports medicine",
+      "keywords": [
+        "ACL",
+        "anterior cruciate",
+        "meniscus",
+        "sports injury",
+        "bone stress injury",
+        "running injury",
+        "tendinopathy",
+        "achilles"
+      ],
+      "base_weight": 1
+    },
+    {
+      "weight": 1,
+      "tag": "neuropathic pain",
+      "keywords": [
+        "neuropathic pain",
+        "postherpetic neuralgia",
+        "herpes zoster",
+        "phantom limb pain"
+      ],
+      "base_weight": 1
+    },
+    {
+      "weight": 1,
+      "tag": "MSK ultrasound dx",
+      "keywords": [
+        "musculoskeletal ultrasound",
+        "sonographic",
+        "dynamic ultrasound",
+        "ultrasonographic",
+        "point-of-care ultrasound"
+      ],
+      "base_weight": 1
+    },
+    {
+      "weight": 1,
+      "tag": "dysphagia",
+      "keywords": [
+        "dysphagia",
+        "swallowing",
+        "FEES",
+        "videofluoroscopic",
+        "VFSS",
+        "oropharyngeal"
+      ],
+      "base_weight": 1
+    },
+    {
+      "weight": 1,
+      "tag": "spatial neglect",
+      "keywords": [
+        "spatial neglect",
+        "unilateral neglect",
+        "hemispatial neglect",
+        "visuospatial"
+      ],
+      "base_weight": 1
+    },
+    {
+      "weight": 1,
+      "tag": "CP",
+      "keywords": [
+        "cerebral palsy",
+        "CP spasticity",
+        "hemiplegic CP"
+      ],
+      "base_weight": 1
+    },
+    {
+      "weight": 1,
+      "tag": "biomechanics",
+      "keywords": [
+        "gait analysis",
+        "biomechanics",
+        "kinematics",
+        "kinetics"
+      ],
+      "base_weight": 1
+    },
+    {
+      "weight": 1,
+      "tag": "amputation",
+      "keywords": [
+        "amputation",
+        "prosthesis",
+        "prosthetic",
+        "phantom limb",
+        "limb loss"
+      ],
+      "base_weight": 1
+    },
+    {
+      "weight": 1,
+      "tag": "exercise Rx",
+      "keywords": [
+        "whole body vibration",
+        "aerobic exercise",
+        "resistance exercise",
+        "exercise intervention",
+        "prehabilitation"
+      ],
+      "base_weight": 1
+    }
+  ],
+  "negative": [
+    {
+      "weight": -3,
+      "tag": "basic science",
+      "keywords": [
+        "animal model",
+        "rat model",
+        "mouse model",
+        "in vitro",
+        "cell culture",
+        "molecular mechanism",
+        "signaling pathway"
+      ]
+    },
+    {
+      "weight": -2,
+      "tag": "tDCS",
+      "keywords": [
+        "transcranial direct current stimulation",
+        "tDCS"
+      ]
+    },
+    {
+      "weight": -2,
+      "tag": "focused US brain",
+      "keywords": [
+        "transcranial focused ultrasound",
+        "transcranial ultrasound stimulation",
+        "focused ultrasound neuromodulation"
+      ]
+    },
+    {
+      "weight": -2,
+      "tag": "elastography",
+      "keywords": [
+        "elastography",
+        "shear wave elastography",
+        "strain ratio",
+        "SWE"
+      ]
+    },
+    {
+      "weight": -2,
+      "tag": "scale development",
+      "keywords": [
+        "scale validation",
+        "questionnaire development",
+        "psychometric properties",
+        "measurement properties",
+        "cross-cultural validation"
+      ]
+    },
+    {
+      "weight": -2,
+      "tag": "education/admin",
+      "keywords": [
+        "education survey",
+        "curriculum development",
+        "teaching method",
+        "trainee preparedness",
+        "career development",
+        "residency training"
+      ]
+    },
+    {
+      "weight": -1,
+      "tag": "prediction model",
+      "keywords": [
+        "biomarker prediction",
+        "machine learning prediction",
+        "prognostic model",
+        "nomogram"
+      ]
+    },
+    {
+      "weight": -1,
+      "tag": "rare disease",
+      "keywords": [
+        "rare disease",
+        "genetic disorder",
+        "inborn error",
+        "chromosomal",
+        "gene mutation"
+      ]
+    },
+    {
+      "weight": -1,
+      "tag": "qualitative",
+      "keywords": [
+        "qualitative study",
+        "phenomenological",
+        "grounded theory",
+        "thematic analysis",
+        "photovoice"
+      ]
+    },
+    {
+      "weight": -1,
+      "tag": "health economics",
+      "keywords": [
+        "cost-effectiveness",
+        "health economics",
+        "utilization rate",
+        "insurance claims"
+      ]
+    },
+    {
+      "weight": -1,
+      "tag": "non-PMR",
+      "keywords": [
+        "prenatal",
+        "fetal ultrasound",
+        "obstetric",
+        "neonatal jaundice",
+        "colorectal cancer",
+        "endometrial"
+      ]
+    },
+    {
+      "weight": -1,
+      "tag": "speech-language",
+      "keywords": [
+        "stuttering",
+        "phonology",
+        "bilingual children",
+        "cochlear implant",
+        "hearing aid"
+      ]
+    }
+  ],
+  "negative_exceptions": {
+    "scale development": [
+      "FMA",
+      "Fugl-Meyer",
+      "TWIST",
+      "GAS",
+      "ASIA",
+      "Barthel"
+    ],
+    "prediction model": [
+      "treatment selection",
+      "clinical decision"
+    ],
+    "rare disease": [
+      "breakthrough",
+      "first-in-human",
+      "novel treatment",
+      "gene therapy"
+    ],
+    "speech-language": [
+      "aphasia",
+      "dysarthria",
+      "dysphagia"
+    ]
+  },
+  "design_bonus": {
+    "randomized controlled": 1,
+    "RCT": 1,
+    "systematic review": 1,
+    "meta-analysis": 1,
+    "guideline": 1,
+    "consensus": 1,
+    "Cochrane": 1
+  },
+  "design_penalty_context": {
+    "applies_to_tags": [
+      "prolotherapy",
+      "PRP/regen"
+    ],
+    "patterns": [
+      "retrospective",
+      "case series",
+      "case report"
+    ],
+    "penalty": -1
+  },
+  "bonus_authors": [
+    "Chang, Ke-Vin",
+    "Özçakar, Levent",
+    "Ricci, Vincenzo",
+    "Hauser, Ross"
+  ]
+}
