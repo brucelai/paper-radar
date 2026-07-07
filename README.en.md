@@ -94,6 +94,11 @@ My own downstream is an on-demand process that reads unsynced D1 actions → sha
 
 > That stage is **tightly coupled to my personal Obsidian + LLM toolchain and is not in this repo.** `_worker.js`'s `GET /api/state?unsynced=1` is the hook for any downstream — wire it to whatever you want (store to Notion, hand to an LLM, email yourself…). Think of it as: the radar already filtered, ranked, and tagged full-text for you — do whatever you like with the result.
 
+> 🔗 My own "🔬 quality appraisal / 📚 content digest" downstream is open-sourced as
+> [**claude-paper-tools**](https://github.com/drpwchen/claude-paper-tools) (`/paper-review` + `/paper-digest`,
+> with deterministic GRADE recompute and a CrossRef citation gate). paper-radar is the *discovery* end,
+> claude-paper-tools is the *reading* end — together they form the full paper-reading pipeline.
+
 ## PRPM v2 · Personal Research Preference Model
 
 v1's ranking was a single hand-written keyword weight table, vote-only, with a manual training step — essentially a sorter. v2 rewrites the whole recommendation engine into a **self-learning personal preference model**: every ✅/🔬/📚/👍😐👎/seen event sharpens its answers to "what do you like (topic × methodology × setting), what do you dislike, which features actually drive decisions, and how are your preferences drifting over time." Full math and constants live in [`docs/DESIGN-PRPM.md`](docs/DESIGN-PRPM.md).

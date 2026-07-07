@@ -92,6 +92,10 @@
 
 > 這段**緊綁我個人的 Obsidian + LLM 工具鏈，不在本 repo 內**。`_worker.js` 的 `GET /api/state?unsynced=1` 就是給下游拉資料的接口——你可以接成任何你要的東西（存進 Notion、丟給某個 LLM 整理、寄 email 給自己……）。把它當成「雷達已經幫你篩好、排好、標好全文，剩下你愛怎麼用」。
 
+> 🔗 我自己下游那兩支「🔬 品質評讀 / 📚 內容整理」的 Claude Code skill 已經開源，就是
+> [**claude-paper-tools**](https://github.com/drpwchen/claude-paper-tools)（`/paper-review` + `/paper-digest`，
+> 含確定性 GRADE 計算與 CrossRef 引用查核）。paper-radar 負責「發現/挑選」，claude-paper-tools 負責「評讀/吸收」，兩端合起來就是完整的讀論文 pipeline。
+
 ## PRPM v2 · 個人研究偏好模型（Personal Research Preference Model）
 
 v1 的排序只看一組手寫關鍵字權重、只吃 👍👎、還得手動跑訓練，本質是個排序器。v2 把整個推薦引擎重寫成一個**會自我學習的個人偏好模型**：每個 ✅/🔬/📚/👍😐👎/seen 事件都在回答「你喜歡什麼主題 × 方法學 × 場域、討厭什麼、哪些特徵真的驅動決策、偏好如何隨時間漂移」。完整數學與常數見 [`docs/DESIGN-PRPM.md`](docs/DESIGN-PRPM.md)。
