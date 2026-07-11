@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""paper-radar 核心：抓 39 feeds (rss + pubmed_search) → SQLite 去重(生命週期) →
-   移植 rss_tagger 評分 → papers.json。
+"""paper-radar 核心：抓取技術研究來源 → SQLite 去重(生命週期) → 評分 → papers.json。
 
 Usage:
     python fetch_and_score.py [--config config.yaml] [--db paper_radar.db]
@@ -21,7 +20,14 @@ import yaml
 SCRIPT_DIR = Path(__file__).parent
 UA = "Mozilla/5.0 (paper-radar)"
 EUTILS = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
+OPENALEX = "https://api.openalex.org/works"
+CROSSREF = "https://api.crossref.org/works"
+S2 = "https://api.semanticscholar.org/graph/v1/paper/search"
+DBLP = "https://dblp.org/search/publ/api"
+OPENREVIEW = "https://api2.openreview.net/notes"
 DOI_RE = re.compile(r"10\.\d{4,9}/[-._;()/:A-Za-z0-9]+")
+TEXTILE_KEYWORDS = ("textile", "fiber", "fibre", "fabric", "yarn", "weaving",
+                    "nonwoven", "smart textile")
 
 
 # --------------------------------------------------------------------------- #
@@ -149,6 +155,104 @@ def parse_pubmed_xml(xml):
 
 
 # --------------------------------------------------------------------------- #
+# 抓取：技術研究 API
+# --------------------------------------------------------------------------- #
+def parse_date(parts):
+    if not parts:
+        return ""
+    values = parts.get("date-parts", [[]])[0] if isinstance(parts, dict) else parts
+    return "-".join(str(v).zfill(2) if i else str(v) for i, v in enumerate(values[:3]))
+
+
+def author_names(authors):
+    return ", ".join(" ".join(x for x in (a.get("given", ""), a.get("family", "")) if x)
+                     or a.get("name", "") for a in (authors or []))
+
+
+def fetch_openalex(feed):
+    params = {"per-page": feed.get("limit", 20), "select":
+              "id,doi,title,authorships,publication_date,abstract_inverted_index,primary_location"}
+    if feed.get("search"):
+        params["search"] = feed["search"]
+    if feed.get("filter"):
+        params["filter"] = feed["filter"]
+    data = json.loads(http_get(f"{OPENALEX}?{urllib.parse.urlencode(params)}"))
+    out = []
+    for work in data.get("results", []):
+        inverted = work.get("abstract_inverted_index") or {}
+        words = sorted(((pos, word) for word, positions in inverted.items() for pos in positions))
+        abstract = " ".join(word for _, word in words)
+        location = work.get("primary_location") or {}
+        out.append(dict(title=work.get("title", ""), url=(location.get("landing_page_url") or work.get("id", "")),
+                        abstract=abstract, authors=author_names(
+                            [{"name": (a.get("author") or {}).get("display_name", "")}
+                             for a in work.get("authorships", [])]),
+                        doi=(work.get("doi") or "").removeprefix("https://doi.org/"),
+                        pub_date=work.get("publication_date") or ""))
+    return [item for item in out if item["title"]]
+
+
+def fetch_crossref(feed):
+    params = {"rows": feed.get("limit", 20), "select":
+              "DOI,title,author,URL,abstract,published,issued,container-title"}
+    if feed.get("query"):
+        params["query"] = feed["query"]
+    if feed.get("filter"):
+        params["filter"] = feed["filter"]
+    data = json.loads(http_get(f"{CROSSREF}?{urllib.parse.urlencode(params)}"))
+    out = []
+    for work in data.get("message", {}).get("items", []):
+        title = clean(" ".join(work.get("title", [])))
+        journal = " ".join(work.get("container-title", []))
+        out.append(dict(title=title, url=work.get("URL", ""), abstract=clean(work.get("abstract", "")),
+                        authors=author_names(work.get("author")), doi=work.get("DOI", ""),
+                        pub_date=parse_date(work.get("published") or work.get("issued")),
+                        journal=journal))
+    return [item for item in out if item["title"]]
+
+
+def fetch_semantic_scholar(feed):
+    params = {"query": feed["query"], "limit": feed.get("limit", 20),
+              "fields": "title,abstract,authors,externalIds,url,publicationDate"}
+    data = json.loads(http_get(f"{S2}?{urllib.parse.urlencode(params)}"))
+    return [dict(title=p.get("title", ""), url=p.get("url", ""), abstract=p.get("abstract") or "",
+                 authors=", ".join(a.get("name", "") for a in p.get("authors", [])),
+                 doi=(p.get("externalIds") or {}).get("DOI", ""),
+                 pub_date=p.get("publicationDate") or "") for p in data.get("data", [])
+            if p.get("title")]
+
+
+def fetch_dblp(feed):
+    params = {"q": feed["query"], "format": "json", "h": feed.get("limit", 20)}
+    data = json.loads(http_get(f"{DBLP}?{urllib.parse.urlencode(params)}"))
+    hits = data.get("result", {}).get("hits", {}).get("hit", [])
+    return [dict(title=clean(hit.get("info", {}).get("title", "")),
+                 url=hit.get("info", {}).get("url", ""), abstract="",
+                 authors=clean(hit.get("info", {}).get("authors", {}).get("text", "")),
+                 doi=hit.get("info", {}).get("doi", ""), pub_date=hit.get("info", {}).get("year", ""))
+            for hit in hits if hit.get("info", {}).get("title")]
+
+
+def fetch_openreview(feed):
+    params = {"invitation": feed["invitation"], "limit": feed.get("limit", 20)}
+    data = json.loads(http_get(f"{OPENREVIEW}?{urllib.parse.urlencode(params)}"))
+    out = []
+    for note in data.get("notes", []):
+        content = note.get("content", {})
+        value = lambda key: (content.get(key) or {}).get("value", "")
+        authors = value("authors")
+        out.append(dict(title=value("title"), url=f"https://openreview.net/forum?id={note.get('id', '')}",
+                        abstract=value("abstract"), authors=", ".join(authors) if isinstance(authors, list) else authors,
+                        doi="", pub_date=value("date") or note.get("cdate", "")))
+    return [item for item in out if item["title"]]
+
+
+def is_textile(item):
+    text = " ".join(str(item.get(field, "")) for field in ("title", "abstract", "journal")).lower()
+    return any(keyword in text for keyword in TEXTILE_KEYWORDS)
+
+
+# --------------------------------------------------------------------------- #
 # 評分（移植 rss_tagger.score_paper）
 # --------------------------------------------------------------------------- #
 def score_paper(paper, model):
@@ -197,6 +301,7 @@ CREATE TABLE IF NOT EXISTS papers (
     score INT, tags TEXT, category TEXT,
     oa_status TEXT, oa_pdf_url TEXT, oa_first_date TEXT,
     inst_subscribed INT, inst_platforms TEXT, sfx_url TEXT,
+    metadata TEXT,
     enriched INT DEFAULT 0,
     first_seen TEXT, last_seen TEXT
 );
@@ -253,13 +358,25 @@ def main():
     if not any(c[1] == "oa_first_date" for c in con.execute("PRAGMA table_info(papers)")):
         con.execute("ALTER TABLE papers ADD COLUMN oa_first_date TEXT")
         con.commit()
+    if not any(c[1] == "metadata" for c in con.execute("PRAGMA table_info(papers)")):
+        con.execute("ALTER TABLE papers ADD COLUMN metadata TEXT")
+        con.commit()
 
     stats = {"new": 0, "updated": 0, "feeds_ok": 0, "feeds_fail": 0}
     for feed in feeds:
         feed.setdefault("limit", args.limit or default_limit)
         kind = feed.get("type", "rss")
         try:
-            items = fetch_pubmed(feed) if kind == "pubmed_search" else fetch_rss(feed)
+            fetchers = {
+                "rss": fetch_rss, "pubmed_search": fetch_pubmed, "openalex": fetch_openalex,
+                "crossref": fetch_crossref, "semantic_scholar": fetch_semantic_scholar,
+                "dblp": fetch_dblp, "openreview": fetch_openreview,
+            }
+            if kind not in fetchers:
+                raise ValueError(f"不支援的 feed type: {kind}")
+            items = fetchers[kind](feed)
+            if feed.get("textile_only"):
+                items = [item for item in items if is_textile(item)]
             stats["feeds_ok"] += 1
         except Exception as e:
             print(f"  ✗ {feed['key']} ({kind}) FAIL: {e}")
@@ -270,6 +387,10 @@ def main():
             it["doi"] = (it.get("doi") or "").strip()
             iid = item_id(it["doi"], it["title"], feed["key"])
             sc, tags = score_paper(it, model)
+            source_bonus = cfg.get("defaults", {}).get("source_quality", {}).get(kind, 0)
+            if source_bonus:
+                sc += source_bonus
+                tags.append(f"source:{kind}")
             cat = ("recommended" if sc >= model["thresholds"]["recommend"]
                    else "candidate" if sc >= model["thresholds"]["candidate"] else "skipped")
             p = dict(item_id=iid, title=it["title"], source=feed["key"],
@@ -290,12 +411,12 @@ def main():
     # 匯出 papers.json（給前端；含分數>=candidate，依分數排序）
     rows = con.execute("""SELECT item_id,title,source,source_name,grp,authors,url,doi,abstract,
                           pub_date,score,tags,category,oa_status,oa_pdf_url,oa_first_date,
-                          inst_subscribed,inst_platforms,sfx_url,first_seen,last_seen
+                          inst_subscribed,inst_platforms,sfx_url,metadata,first_seen,last_seen
                           FROM papers WHERE category!='skipped'
                           ORDER BY score DESC, first_seen DESC""").fetchall()
     cols = ["item_id","title","source","source_name","group","authors","url","doi","abstract",
             "pub_date","score","tags","category","oa_status","oa_pdf_url","oa_first_date",
-            "inst_subscribed","inst_platforms","sfx_url","first_seen","last_seen"]
+            "inst_subscribed","inst_platforms","sfx_url","metadata","first_seen","last_seen"]
     papers = []
     for r in rows:
         d = dict(zip(cols, r))
@@ -303,6 +424,7 @@ def main():
         if d["oa_status"] and d["oa_status"] != "closed" and not d["oa_pdf_url"]:
             continue
         d["tags"] = json.loads(d["tags"] or "[]")
+        d["metadata"] = json.loads(d["metadata"] or "{}")
         d["isNew"] = (date.fromisoformat(d["first_seen"]) - date.today()).days >= -new_days
         # OA 剛被機械重抓到（first_seen 以後才開放全文）→ 前端可單獨顯示「新開放」
         d["oaNew"] = bool(d["oa_first_date"]) and \
