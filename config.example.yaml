@@ -66,7 +66,7 @@ feeds:
 
   # ---- Data Science: topic constrained journal / proceedings metadata ----
   - { key: openalex_ds, group: ds, type: openalex, name: "OpenAlex data science", search: "data mining statistical learning analytics", filter: "from_publication_date:2023-01-01,type:article|proceedings-article" }
-  - { key: crossref_ds, group: ds, type: crossref, name: "Crossref data science", query: "data mining statistical learning analytics", filter: "from-pub-date:2023-01-01,type:journal-article,type:proceedings-article" }
+  - { key: crossref_ds, group: ds, type: crossref, name: "Crossref data science", query: "data mining statistical learning analytics", filter: "from-pub-date:2023-01-01", allowed_types: ["journal-article", "proceedings-article"] }
   - { key: dblp_ds, group: ds, type: dblp, name: "dblp data science", query: "data mining OR statistical learning" }
 
   # ---- Computer Vision: arXiv category + OpenReview + OpenAlex ----
@@ -80,7 +80,7 @@ feeds:
   - { key: openalex_robotics, group: robotics, type: openalex, name: "OpenAlex robotics", search: "robotics autonomous systems control", filter: "from_publication_date:2023-01-01" }
 
   # ---- Textile: journal whitelist plus mandatory textile keyword matching ----
-  - { key: textile_trj, group: textile, type: crossref, name: "Textile Research Journal", query: "Textile Research Journal", filter: "from-pub-date:2023-01-01,type:journal-article", textile_only: true }
-  - { key: textile_jti, group: textile, type: crossref, name: "Journal of The Textile Institute", query: "Journal of The Textile Institute", filter: "from-pub-date:2023-01-01,type:journal-article", textile_only: true }
-  - { key: textile_autex, group: textile, type: crossref, name: "AUTEX Research Journal", query: "AUTEX Research Journal", filter: "from-pub-date:2023-01-01,type:journal-article", textile_only: true }
+  - { key: textile_trj, group: textile, type: crossref, name: "Textile Research Journal", query: "Textile Research Journal", filter: "from-pub-date:2023-01-01,type:journal-article", journal_whitelist: ["Textile Research Journal"], textile_only: true }
+  - { key: textile_jti, group: textile, type: crossref, name: "Journal of The Textile Institute", query: "Journal of The Textile Institute", filter: "from-pub-date:2023-01-01,type:journal-article", journal_whitelist: ["Journal of The Textile Institute"], textile_only: true }
+  - { key: textile_autex, group: textile, type: crossref, name: "AUTEX Research Journal", query: "AUTEX Research Journal", filter: "from-pub-date:2023-01-01,type:journal-article", journal_whitelist: ["AUTEX Research Journal"], textile_only: true }
   - { key: textile_openalex, group: textile, type: openalex, name: "OpenAlex textile engineering", search: "textile fiber fabric yarn weaving nonwoven smart textile", filter: "from_publication_date:2023-01-01", textile_only: true }

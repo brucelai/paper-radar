@@ -194,7 +194,7 @@ def fetch_openalex(feed):
 
 def fetch_crossref(feed):
     params = {"rows": feed.get("limit", 20), "select":
-              "DOI,title,author,URL,abstract,published,issued,container-title"}
+              "DOI,title,author,URL,abstract,published,issued,container-title,type"}
     if feed.get("query"):
         params["query"] = feed["query"]
     if feed.get("filter"):
@@ -207,7 +207,7 @@ def fetch_crossref(feed):
         out.append(dict(title=title, url=work.get("URL", ""), abstract=clean(work.get("abstract", "")),
                         authors=author_names(work.get("author")), doi=work.get("DOI", ""),
                         pub_date=parse_date(work.get("published") or work.get("issued")),
-                        journal=journal))
+                        journal=journal, work_type=work.get("type", "")))
     return [item for item in out if item["title"]]
 
 
@@ -377,6 +377,11 @@ def main():
             items = fetchers[kind](feed)
             if feed.get("textile_only"):
                 items = [item for item in items if is_textile(item)]
+            if feed.get("allowed_types"):
+                items = [item for item in items if item.get("work_type") in feed["allowed_types"]]
+            if feed.get("journal_whitelist"):
+                allowed_journals = {journal.lower() for journal in feed["journal_whitelist"]}
+                items = [item for item in items if item.get("journal", "").lower() in allowed_journals]
             stats["feeds_ok"] += 1
         except Exception as e:
             print(f"  ✗ {feed['key']} ({kind}) FAIL: {e}")
