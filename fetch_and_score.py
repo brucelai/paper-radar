@@ -162,7 +162,10 @@ def parse_date(date_components):
         return ""
     values = (date_components.get("date-parts", [[]])[0]
               if isinstance(date_components, dict) else date_components)
-    return "-".join(str(v).zfill(2) if i else str(v) for i, v in enumerate(values[:3]))
+    if not values:
+        return ""
+    return "-".join([str(values[0]).zfill(4)] +
+                    [str(value).zfill(2) for value in values[1:3]])
 
 
 def author_names(authors):

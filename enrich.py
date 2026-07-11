@@ -55,10 +55,11 @@ def crossref_metadata(doi):
             return {}
         work = response.json().get("message", {})
         date_parts = (work.get("published") or work.get("issued") or {}).get("date-parts", [[]])[0]
+        published = "-".join([str(date_parts[0]).zfill(4)] +
+                             [str(value).zfill(2) for value in date_parts[1:3]]) if date_parts else ""
         return {
             "journal": " ".join(work.get("container-title", [])),
-            "published": "-".join(str(v).zfill(2) if i else str(v)
-                                  for i, v in enumerate(date_parts[:3])),
+            "published": published,
             "type": work.get("type", ""),
         }
     except Exception:
@@ -97,7 +98,7 @@ def semantic_scholar_metadata(doi):
 
 
 def fallback_metadata(doi):
-    """Metadata-only APIs never loosen source/domain admission rules."""
+    """Enrich an already-admitted paper without changing its source/domain admission."""
     return {
         "crossref": crossref_metadata(doi),
         "openalex": openalex_metadata(doi),
