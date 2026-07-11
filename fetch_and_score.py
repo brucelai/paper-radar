@@ -26,8 +26,8 @@ S2 = "https://api.semanticscholar.org/graph/v1/paper/search"
 DBLP = "https://dblp.org/search/publ/api"
 OPENREVIEW = "https://api2.openreview.net/notes"
 DOI_RE = re.compile(r"10\.\d{4,9}/[-._;()/:A-Za-z0-9]+")
-TEXTILE_KEYWORDS = ("textile", "fiber", "fibre", "fabric", "yarn", "weaving",
-                    "nonwoven", "smart textile")
+_TEXTILE_DOMAIN_KEYWORDS = ("textile", "fiber", "fibre", "fabric", "yarn", "weaving",
+                            "nonwoven", "smart textile")
 
 
 # --------------------------------------------------------------------------- #
@@ -157,10 +157,11 @@ def parse_pubmed_xml(xml):
 # --------------------------------------------------------------------------- #
 # 抓取：技術研究 API
 # --------------------------------------------------------------------------- #
-def parse_date(parts):
-    if not parts:
+def parse_date(date_components):
+    if not date_components:
         return ""
-    values = parts.get("date-parts", [[]])[0] if isinstance(parts, dict) else parts
+    values = (date_components.get("date-parts", [[]])[0]
+              if isinstance(date_components, dict) else date_components)
     return "-".join(str(v).zfill(2) if i else str(v) for i, v in enumerate(values[:3]))
 
 
@@ -249,7 +250,7 @@ def fetch_openreview(feed):
 
 def is_textile(item):
     text = " ".join(str(item.get(field, "")) for field in ("title", "abstract", "journal")).lower()
-    return any(keyword in text for keyword in TEXTILE_KEYWORDS)
+    return any(keyword in text for keyword in _TEXTILE_DOMAIN_KEYWORDS)
 
 
 # --------------------------------------------------------------------------- #
