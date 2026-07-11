@@ -17,6 +17,8 @@ import yaml
 
 SCRIPT_DIR = Path(__file__).parent
 UA = "Mozilla/5.0 (paper-radar)"
+OPENALEX = "https://api.openalex.org/works/doi:"
+S2 = "https://api.semanticscholar.org/graph/v1/paper/DOI:"
 
 # 機構訂閱全文 target 的品牌字串 → 平台標籤。這些品牌名只出現在訂閱全文 target，
 # 不與 OA target(Unpaywall/PMC)混。逐篇判定 = 此篇現在能否經機構訂閱取得全文。
@@ -43,6 +45,65 @@ def unpaywall(doi, email):
         return "closed", None
     except Exception:
         return None, None
+
+
+def crossref_metadata(doi):
+    try:
+        response = requests.get(f"https://api.crossref.org/works/{urllib.parse.quote(doi, safe='')}",
+                                headers={"User-Agent": UA}, timeout=20)
+        if response.status_code != 200:
+            return {}
+        work = response.json().get("message", {})
+        date_parts = (work.get("published") or work.get("issued") or {}).get("date-parts", [[]])[0]
+        published = "-".join([str(date_parts[0]).zfill(4)] +
+                             [str(value).zfill(2) for value in date_parts[1:3]]) if date_parts else ""
+        return {
+            "journal": " ".join(work.get("container-title", [])),
+            "published": published,
+            "type": work.get("type", ""),
+        }
+    except Exception:
+        return {}
+
+
+def openalex_metadata(doi):
+    try:
+        response = requests.get(f"{OPENALEX}{urllib.parse.quote(doi, safe='')}",
+                                headers={"User-Agent": UA}, timeout=20)
+        if response.status_code != 200:
+            return {}
+        work = response.json()
+        return {
+            "openalex_id": work.get("id", ""),
+            "cited_by_count": work.get("cited_by_count"),
+            "topics": [topic.get("display_name", "") for topic in work.get("topics", [])],
+        }
+    except Exception:
+        return {}
+
+
+def semantic_scholar_metadata(doi):
+    try:
+        response = requests.get(f"{S2}{urllib.parse.quote(doi, safe='')}?fields=citationCount,tldr",
+                                headers={"User-Agent": UA}, timeout=20)
+        if response.status_code != 200:
+            return {}
+        paper = response.json()
+        return {
+            "semantic_scholar_citations": paper.get("citationCount"),
+            "tldr": (paper.get("tldr") or {}).get("text", ""),
+        }
+    except Exception:
+        return {}
+
+
+def fallback_metadata(doi):
+    """Enrich an already-admitted paper without changing its source/domain admission."""
+    return {
+        "crossref": crossref_metadata(doi),
+        "openalex": openalex_metadata(doi),
+        "semantic_scholar": semantic_scholar_metadata(doi),
+    }
 
 
 def pdf_reachable(url):
@@ -85,7 +146,7 @@ def export_json(con, cfg, out):
     new_days = cfg.get("defaults", {}).get("new_days", 5)
     cols = ["item_id","title","source","source_name","group","authors","url","doi","abstract",
             "pub_date","score","tags","category","oa_status","oa_pdf_url","oa_first_date",
-            "inst_subscribed","inst_platforms","sfx_url","first_seen","last_seen"]
+            "inst_subscribed","inst_platforms","sfx_url","metadata","first_seen","last_seen"]
     rows = con.execute(f"""SELECT {','.join(c if c!='group' else 'grp' for c in cols)}
                            FROM papers WHERE category!='skipped'
                            ORDER BY score DESC, first_seen DESC""").fetchall()
@@ -96,6 +157,7 @@ def export_json(con, cfg, out):
         if d["oa_status"] and d["oa_status"] != "closed" and not d["oa_pdf_url"]:
             continue
         d["tags"] = json.loads(d["tags"] or "[]")
+        d["metadata"] = json.loads(d["metadata"] or "{}")
         d["isNew"] = (date.fromisoformat(d["first_seen"]) - date.today()).days >= -new_days
         # OA 剛被機械重抓到（first_seen 以後才開放全文）→ 前端可單獨顯示「新開放」
         d["oaNew"] = bool(d["oa_first_date"]) and \
@@ -132,6 +194,9 @@ def main():
     if not any(c[1] == "oa_first_date" for c in con.execute("PRAGMA table_info(papers)")):
         con.execute("ALTER TABLE papers ADD COLUMN oa_first_date TEXT")
         con.commit()
+    if not any(c[1] == "metadata" for c in con.execute("PRAGMA table_info(papers)")):
+        con.execute("ALTER TABLE papers ADD COLUMN metadata TEXT")
+        con.commit()
 
     if args.recheck:
         # 機械重抓：只挑「目前無 OA PDF」且夠新的論文（太老不太可能再開放，省請求）
@@ -156,12 +221,12 @@ def main():
         if oa_status and oa_status != "closed" and not pdf_reachable(oa_pdf):
             oa_pdf = None
         inst_sub, inst_plat = sfx_subscription(doi, cfg) if do_sfx else (None, "")
-        return iid, oa_status, oa_pdf, inst_sub, inst_plat, sfx_link(doi, cfg)
+        return iid, oa_status, oa_pdf, inst_sub, inst_plat, sfx_link(doi, cfg), fallback_metadata(doi)
 
     from concurrent.futures import ThreadPoolExecutor
     n_oa = n_inst = done = 0
     with ThreadPoolExecutor(max_workers=args.workers) as ex:
-        for iid, oa_status, oa_pdf, inst_sub, inst_plat, sfx in ex.map(work, rows):
+        for iid, oa_status, oa_pdf, inst_sub, inst_plat, sfx, metadata in ex.map(work, rows):
             if oa_status and oa_status != "closed":
                 n_oa += 1
             if inst_sub:
@@ -170,8 +235,9 @@ def main():
             oa_stamp = date.today().isoformat() if oa_pdf else None
             con.execute("""UPDATE papers SET oa_status=?, oa_pdf_url=?,
                            oa_first_date=COALESCE(oa_first_date, ?), inst_subscribed=?,
-                           inst_platforms=?, sfx_url=?, enriched=1 WHERE item_id=?""",
-                        (oa_status, oa_pdf, oa_stamp, inst_sub, inst_plat, sfx, iid))
+                           inst_platforms=?, sfx_url=?, metadata=?, enriched=1 WHERE item_id=?""",
+                        (oa_status, oa_pdf, oa_stamp, inst_sub, inst_plat, sfx,
+                         json.dumps(metadata, ensure_ascii=False), iid))
             done += 1
             if done % 50 == 0:
                 con.commit(); print(f"  {done}/{len(rows)}  OA={n_oa}  機構={n_inst}", flush=True)
